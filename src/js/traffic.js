@@ -689,6 +689,7 @@ const bodyFilterer = (( ) => {
         'audio/x-mpegurl',
     ]);
     const BINARY_TYPES = fc.FONT | fc.IMAGE | fc.MEDIA | fc.WEBSOCKET;
+    /** 10MiB */
     const MAX_RESPONSE_BUFFER_LENGTH = 10 * 1024 * 1024;
 
     let textDecoder, textEncoder;
@@ -731,19 +732,22 @@ const bodyFilterer = (( ) => {
         if ( bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF ) {
             return 'utf-8';
         }
-        let i = -1;
-        while ( i < 65536 ) {
-            i += 1;
-            /* c */ if ( bytes[i+0] !== 0x63 ) { continue; }
-            /* h */ if ( bytes[i+1] !== 0x68 ) { continue; }
-            /* a */ if ( bytes[i+2] !== 0x61 ) { continue; }
-            /* r */ if ( bytes[i+3] !== 0x72 ) { continue; }
-            /* s */ if ( bytes[i+4] !== 0x73 ) { continue; }
-            /* e */ if ( bytes[i+5] !== 0x65 ) { continue; }
-            /* t */ if ( bytes[i+6] !== 0x74 ) { continue; }
+        // would this be faster?:
+        // https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string-search_algorithm
+        let i = 0;
+        while ( i < (65536 - 39) ) {
+            // every pattern-char is unique,
+            // so we can skip multiple offsets
+            /* c */ if ( bytes[i+0] !== 0x63 ) { i += 1; continue; }
+            /* h */ if ( bytes[i+1] !== 0x68 ) { i += 1; continue; }
+            /* a */ if ( bytes[i+2] !== 0x61 ) { i += 2; continue; }
+            /* r */ if ( bytes[i+3] !== 0x72 ) { i += 3; continue; }
+            /* s */ if ( bytes[i+4] !== 0x73 ) { i += 4; continue; }
+            /* e */ if ( bytes[i+5] !== 0x65 ) { i += 5; continue; }
+            /* t */ if ( bytes[i+6] !== 0x74 ) { i += 6; continue; }
             break;
         }
-        if ( (i + 40) >= 65536 ) { return; }
+        if ( i >= (65536 - 40) ) { return; }
         i += 8;
         // find first alpha character
         let j = -1;
