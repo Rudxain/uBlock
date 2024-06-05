@@ -120,12 +120,15 @@ const BCELL_EXTRA_MAX = 0x00FFFFFF;
 const toSegmentInfo = (aL, l, r) => ((r - l) << 24) | (aL + l);
 const roundToPageSize = v => (v + PAGE_SIZE-1) & ~(PAGE_SIZE-1);
 
-// http://www.cse.yorku.ca/~oz/hash.html#djb2
+/** http://www.cse.yorku.ca/~oz/hash.html#djb2 */
 const i32Checksum = (buf32) => {
     const n = buf32.length;
     let hash = 177573 ^ n;
+    // this seems performance-critical,
+    // hence the commented-out code:
+    //for ( const i32 of buf32 )
     for ( let i = 0; i < n; i++ ) {
-        hash = (hash << 5) + hash ^ buf32[i];
+        hash = (hash << 5) + hash ^ /*i32*/buf32[i];
     }
     return hash;
 };
